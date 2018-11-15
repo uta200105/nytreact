@@ -7,9 +7,7 @@ Technologies used:
 React
 Bootstrap
 CSS
-ES6
 JavaScript
-JSX
 
 Node dependencies:
 React
