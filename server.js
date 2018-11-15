@@ -1,24 +1,49 @@
-const express = require("express");
+// Require dependecies
+var express = require("express");
+var mongoose = require("mongoose");
+var dotenv = require('dotenv').config()
+var bluebird = require("bluebird");
+var bodyParser = require("body-parser");
+var routes = require("./routes/routes");
+var apiController = require('./controllers/apiController')
 
-const mongoose = require("mongoose");
-const routes = require("./routes");
-const app = express();
-const PORT = process.env.PORT || 3001;
+// Set up a default port, configure mongoose, configure middleware
+var PORT = process.env.PORT || 3000;
+mongoose.Promise = bluebird;
+var app = express();
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.static(__dirname + "/build"));
 
-// Define middleware here
-app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-// Serve up static assets (usually on heroku)
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static("client/build"));
-}
-// Add routes, both API and view
-app.use(routes);
+var db = process.env.MONGODB_URI || "mongodb://localhost/nyt-react";
 
-// Connect to the Mongo DB
-mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost/nytdata");
+// Connect mongoose
+mongoose.connect(db, function(error) {
+  if (error) {
+    console.error(error);
+  }
+  else {
+    console.log("mongoose connection is successful");
+  }
+});
 
-// Start the API server
+// enable CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*')
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept')
+  next();
+});
+
+app.use("/", routes);
+
+app.post("/api/articles", apiController.create);
+
+app.get("/api/articles", apiController.index);
+
+app.delete("/api/articles/:id", apiController.destroy);
+
+// Start the server
 app.listen(PORT, function() {
-  console.log(`🌎  ==> API Server now listening on PORT ${PORT}!`);
+  console.log("Now listening on port %s! Visit localhost:%s in your browser.", PORT, PORT);
 });
